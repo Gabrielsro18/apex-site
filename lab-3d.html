@@ -40,6 +40,15 @@ bone.position.copy(A.add(B).multiplyScalar(.5));bone.quaternion.setFromUnitVecto
 for(const i of [2,4,5]){const p=shape[i],tip=new THREE.Mesh(new THREE.ConeGeometry(.09,.32,5),gold);tip.position.set(p[0]-.08,p[1]+.14,p[2]);tip.rotation.z=-.45;hinge.add(tip)}
 return hinge}
 const left=wing(-1),right=wing(1);
+// Dedos estruturais das asas, conectados ao corpo e à borda externa.
+for(const [hinge,side] of [[left,-1],[right,1]]) {
+  const digits=[[-.38,2.75,side*.65],[-1.15,2.38,side*1.5],[-1.62,1.45,side*2.12],[-2.3,1.72,side*2.2],[-2.8,.65,side*2.55]];
+  for(let i=1;i<digits.length;i++){
+    const from=[-.12,.18,0],to=digits[i];
+    segment(hinge,i===digits.length-1?gold:armor,from,to,.075,.017);
+  }
+}
+
 // Anatomia complementar: placas no pescoço, mandíbula, ombros e espinhos da cauda.
 for(let i=0;i<7;i++){const x=1.02+i*.17,y=.34+i*.036;const plate=ball(dragon,i%3===0?gold:armor,x,y,-.31+i*.012,.16,.16,.09);plate.rotation.z=-.25;const plate2=ball(dragon,i%3===0?gold:armor,x,y,.31-i*.012,.16,.16,.09);plate2.rotation.z=-.25}
 const jaw=ball(dragon,dark,2.14,.18,0,.48,.105,.25);jaw.rotation.z=-.075;
@@ -67,15 +76,15 @@ const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push
 const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
 function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1)}
 addEventListener('scroll',update,{passive:true});update();
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();displayProgress+=(progress-displayProgress)*Math.min(1,clock.getDelta()*(reducedMotion?20:7));const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18);
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();displayProgress+=(progress-displayProgress)*Math.min(1,clock.getDelta()*(reducedMotion?20:7));const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
 dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+Math.sin(t*1.7)*.08*lift*(1-settle),1);
-dragon.rotation.set(-.03*lift,.03+cruise*.16,(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
+dragon.rotation.set(-.03*lift,.03+cruise*.16+Math.sin(t*.5)*.035*flight,(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
 const flap=(reducedMotion?0:Math.sin(t*(2.5+lift*3.2)))*(.13+lift*.37)*(1-settle);
 left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
 left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
 left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
 tail.rotation.z=reducedMotion?0:Math.sin(t*2)*.16;tail.rotation.y=reducedMotion?0:Math.sin(t*1.5)*.12;emblem.rotation.y=reducedMotion?0:Math.sin(t*.25)*.035;
-const mobile=innerWidth<700;camera.position.x=cruise*5.0;camera.position.y=5+lift*.45-settle*.3;camera.position.z=mobile?25:19;camera.lookAt(cruise*4.0,settle*.1,0);const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(t*.8);for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(t*.11+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
+const mobile=innerWidth<700;camera.fov=mobile?48:38;camera.updateProjectionMatrix();camera.position.x=cruise*5.0;camera.position.y=5+lift*.45-settle*.3;camera.position.z=mobile?25:19;camera.lookAt(cruise*4.0,settle*.1,0);const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(t*.8);for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(t*.11+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75))});
 }catch(e){document.getElementById('error').style.display='grid';console.error(e)}
 </script></body></html>
