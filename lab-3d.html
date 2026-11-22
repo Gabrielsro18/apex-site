@@ -104,6 +104,14 @@ const shadowMap=new THREE.CanvasTexture(shadowTexture);
 function contactShadow(x){const mesh=new THREE.Mesh(new THREE.PlaneGeometry(4.4,3.4),new THREE.MeshBasicMaterial({map:shadowMap,transparent:true,opacity:.65,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-1}));mesh.rotation.x=-Math.PI/2;mesh.position.set(x,-.78,1);scene.add(mesh);return mesh}
 const startShadow=contactShadow(-3),endShadow=contactShadow(5);
 const emblem=new THREE.Group();scene.add(emblem);emblem.position.set(5,-.4,-1);const bar=(x,y,z,w,h,rot)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.42),gold);m.position.set(x,y,z);m.rotation.z=rot;m.castShadow=true;emblem.add(m)};bar(-.8,0,0,.42,3.5,-.46);bar(.8,0,0,.42,3.5,.46);bar(0,-.35,.1,1.65,.35,0);const jewel=new THREE.Mesh(new THREE.OctahedronGeometry(.27),new THREE.MeshStandardMaterial({color:0xc51323,emissive:0x65000b,emissiveIntensity:.7,metalness:.35,roughness:.18}));jewel.position.set(0,.45,.35);emblem.add(jewel);
+const jewelGlow=new THREE.PointLight(0xff3a21,0,8);jewelGlow.position.set(5,.05,-.35);scene.add(jewelGlow);
+const auraMaterial=new THREE.SpriteMaterial({color:0xff5b30,transparent:true,opacity:0,depthWrite:false,blending:THREE.AdditiveBlending});
+const auraCanvas=document.createElement('canvas');auraCanvas.width=128;auraCanvas.height=128;
+const auraContext=auraCanvas.getContext('2d'),auraGradient=auraContext.createRadialGradient(64,64,2,64,64,64);
+auraGradient.addColorStop(0,'rgba(255,230,150,1)');auraGradient.addColorStop(.25,'rgba(255,70,25,.65)');auraGradient.addColorStop(1,'rgba(255,30,10,0)');
+auraContext.fillStyle=auraGradient;auraContext.fillRect(0,0,128,128);
+auraMaterial.map=new THREE.CanvasTexture(auraCanvas);auraMaterial.needsUpdate=true;
+const aura=new THREE.Sprite(auraMaterial);aura.position.set(5,.05,-.35);aura.scale.set(2.4,2.4,1);scene.add(aura);
 // Névoa volumétrica simulada em camadas transparentes.
 const hazeMat=new THREE.MeshBasicMaterial({color:0x5a1c23,transparent:true,opacity:.095,depthWrite:false,side:THREE.DoubleSide});
 const haze=[];for(let i=0;i<7;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(22,4),hazeMat.clone());m.position.set((i%3-1)*4,-2+i*.34,-3-i*.6);m.rotation.x=-.17;m.material.opacity=.035+(i%3)*.026;scene.add(m);haze.push(m)}
@@ -135,6 +143,8 @@ impact.material.opacity=burst*.7;
 const impactArray=impactGeometry.attributes.position.array;
 for(let i=0;i<impactVectors.length/3;i++){const p=i*3;impactArray[p]=impactVectors[p]*burst;impactArray[p+1]=impactVectors[p+1]*burst-.55*burst*burst;impactArray[p+2]=impactVectors[p+2]*burst}
 impactGeometry.attributes.position.needsUpdate=true;
+const ignite=ease((displayProgress-.81)/.13);
+jewelGlow.intensity=ignite*12;auraMaterial.opacity=ignite*.5;aura.scale.setScalar(1.5+ignite*1.8);
 const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(displayProgress*6)+finalShot*35;for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(displayProgress*3+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75))});
 }catch(e){document.getElementById('error').style.display='grid';console.error(e)}
