@@ -27,6 +27,30 @@
 .apex-back.visible{opacity:1;pointer-events:auto}
 @media(max-width:650px){.apex-nav{gap:10px;padding:20px 12px}.apex-nav a{font-size:9px;letter-spacing:0}.apex-nav .apex-nav-join{padding:8px}.apex-scroll-hint{bottom:30px}}
 @media(prefers-reduced-motion:reduce){.apex-scroll-hint b{animation:none}}
+</style><style id="apex-cinematic-framing">
+/* Keep every original image visible; fill unused screen space with a soft copy. */
+.viewport{isolation:isolate;background:#080407}
+.scene{background-image:none!important;background-color:transparent!important;overflow:hidden;filter:none}
+.scene::before,.scene::after{content:"";position:absolute;inset:0;display:block;background-image:var(--scene-image);background-position:center;background-repeat:no-repeat;pointer-events:none}
+.scene::before{inset:-32px;background-size:cover;filter:blur(30px) brightness(.30) saturate(.85);transform:scale(1.025)}
+.scene::after{background-size:contain;filter:contrast(1.02) saturate(1.03)}
+.scene:nth-child(1){--scene-image:url('assets/cena-1.webp')}
+.scene:nth-child(2){--scene-image:url('assets/cena-2.webp')}
+.scene:nth-child(3){--scene-image:url('assets/cena-3.webp')}
+.scene:nth-child(4){--scene-image:url('assets/cena-4.webp')}
+@media(max-width:650px){
+ .viewport{height:100svh;min-height:420px}
+ .scene::after{background-size:contain;background-position:center}
+ .scene::before{filter:blur(24px) brightness(.25)}
+ .shade{background:linear-gradient(180deg,#0009,transparent 22%,transparent 65%,#0009)}
+ header{padding:16px 18px}
+ .brand{font-size:26px}
+ header span{font-size:9px;max-width:145px;text-align:right}
+ .apex-scroll-hint{bottom:max(24px,env(safe-area-inset-bottom))}
+ .end{bottom:12%;width:92%}
+ .links a{padding:14px 20px}
+}
+@media(prefers-reduced-motion:reduce){.scene::before{filter:blur(24px) brightness(.3)}}
 </style></head><body><nav class="apex-nav" aria-label="Navegação"><a href="#sobre-apex">Sobre a guilda</a><a class="apex-nav-join" href="#sobre-apex">Faça parte</a></nav><div class="apex-progress" aria-hidden="true"><i id="apexProgress"></i></div><a class="apex-back" id="apexBack" href="#stage" aria-label="Voltar ao início">↑ Voltar ao topo</a><main class="stage" id="stage"><section class="viewport" aria-label="Experiência cinematográfica APEX"><div class="scene"></div><div class="scene"></div><div class="scene"></div><div class="scene"></div><div class="flight-glow" id="flightGlow"></div><div class="shade"></div><div class="vignette"></div><div class="embers" id="embers"></div><div class="apex-scroll-hint" id="apexScrollHint" aria-hidden="true">ROLE PARA EXPLORAR<b>⌄</b></div><header><div class="brand">APEX</div><span>UMA GUILD, UM LEGADO</span></header><div class="end" id="end"><div class="links"><a id="whatsapp" href="#" aria-label="Link do WhatsApp ainda não configurado">WhatsApp</a><a class="discord" id="discord" href="#" aria-label="Link do Discord ainda não configurado">Discord</a></div></div></section></main><section class="apex-values" id="sobre-apex" aria-label="Sobre a guilda APEX"><div class="eyebrow">Nossa essência</div><h2>Mais que uma guilda. Um time.</h2><p class="intro">Na APEX, união, pertencimento e diversão caminham juntos. Respeito é inegociável.</p><div class="apex-cards"><article><h3>União</h3><p>Conquistas compartilhadas e uma comunidade que cresce em equipe.</p></article><article><h3>Respeito</h3><p>Rivalidade faz parte do jogo. Desrespeito não faz parte da APEX.</p></article><article><h3>Organização</h3><p>Comunicação e ferramentas para aproveitar melhor cada hunt.</p></article></div><div class="apex-join"><a href="https://discord.gg/HZjaWQbrF" target="_blank" rel="noopener noreferrer">Entrar no Discord</a><a href="https://chat.whatsapp.com/DxlFeIkSrod55x6ZfSsQ5R" target="_blank" rel="noopener noreferrer">Comunidade WhatsApp</a></div></section><script>
 // CONFIGURE OS LINKS REAIS AQUI:
 const LINKS={whatsapp:'https://chat.whatsapp.com/DxlFeIkSrod55x6ZfSsQ5R',discord:'https://discord.gg/HZjaWQbrF'};
