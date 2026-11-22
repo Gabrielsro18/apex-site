@@ -13,6 +13,12 @@ const view=document.getElementById('view'),scene=new THREE.Scene();scene.fog=new
 const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,300);camera.position.set(0,5,19);
 camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;view.prepend(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xaaa5c9,0x240707,2.0));const sun=new THREE.DirectionalLight(0xffbd75,3.2);sun.position.set(-4,9,6);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-15;sun.shadow.camera.right=15;sun.shadow.camera.top=15;sun.shadow.camera.bottom=-15;scene.add(sun);const red=new THREE.PointLight(0xff2915,100,30);red.position.set(2,-1,1);scene.add(red);const rim=new THREE.DirectionalLight(0xe14234,2.1);rim.position.set(1,4,-8);scene.add(rim);
+// Profundidade atmosférica: brasas em planos diferentes, acompanhando o voo.
+const emberCount=120,emberPositions=new Float32Array(emberCount*3),emberSeed=new Float32Array(emberCount);
+for(let i=0;i<emberCount;i++){emberSeed[i]=(i*0.61803398875)%1;emberPositions[i*3]=-11+((i*0.754877666)%1)*23;emberPositions[i*3+1]=-2+((i*0.569840291)%1)*12;emberPositions[i*3+2]=-8+((i*0.438579)%1)*15}
+const emberGeometry=new THREE.BufferGeometry();emberGeometry.setAttribute('position',new THREE.BufferAttribute(emberPositions,3));
+const emberMaterial=new THREE.PointsMaterial({color:0xf19b55,size:.055,transparent:true,opacity:.38,depthWrite:false,blending:THREE.AdditiveBlending,sizeAttenuation:true});
+const floatingEmbers=new THREE.Points(emberGeometry,emberMaterial);scene.add(floatingEmbers);
 const dark=new THREE.MeshStandardMaterial({color:0x270b11,roughness:.7,metalness:.2}),scale=new THREE.MeshStandardMaterial({color:0x8f1620,roughness:.47,metalness:.32}),gold=new THREE.MeshStandardMaterial({color:0xd8a34b,roughness:.27,metalness:.8}),membrane=new THREE.MeshStandardMaterial({color:0x7d1420,side:THREE.DoubleSide,roughness:.72,metalness:.12}),eye=new THREE.MeshBasicMaterial({color:0xffd04b});
 function ball(parent,mat,x,y,z,sx,sy,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;parent.add(m);return m}
 function spike(parent,x,y,z,len,mat=gold){const m=new THREE.Mesh(new THREE.ConeGeometry(.12,len,6),mat);m.position.set(x,y+len/2,z);parent.add(m);return m}
@@ -145,7 +151,7 @@ for(let i=0;i<impactVectors.length/3;i++){const p=i*3;impactArray[p]=impactVecto
 impactGeometry.attributes.position.needsUpdate=true;
 const ignite=ease((displayProgress-.81)/.13);
 jewelGlow.intensity=ignite*12;auraMaterial.opacity=ignite*.5;aura.scale.setScalar(1.5+ignite*1.8);
-const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(displayProgress*6)+finalShot*35;for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(displayProgress*3+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
+const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(displayProgress*6)+finalShot*35;floatingEmbers.position.x=-displayProgress*1.8;floatingEmbers.position.y=displayProgress*.9;emberMaterial.opacity=.24+flight*.24+finalShot*.1;for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(displayProgress*3+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75))});
 }catch(e){document.getElementById('error').style.display='grid';console.error(e)}
 </script></body></html>
