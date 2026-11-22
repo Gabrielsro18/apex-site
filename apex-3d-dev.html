@@ -70,7 +70,7 @@ new GLTFLoader().load('./assets/apex-dragon.glb',gltf=>{
   const scaled=new THREE.Box3().setFromObject(model),center=scaled.getCenter(new THREE.Vector3());
   model.position.sub(center);
   dragon.add(model);
-  for(const part of proceduralParts)part.visible=false;
+  for(const part of dragon.children){if(part!==model)part.visible=false;}
   left.visible=false;right.visible=false;
   if(gltf.animations.length){dragonMixer=new THREE.AnimationMixer(model);dragonClip=dragonMixer.clipAction(gltf.animations[0]);dragonClip.play()}
 },undefined,()=>{/* Fallback procedural enquanto o GLB não estiver disponível. */});
@@ -94,6 +94,24 @@ for(let i=0;i<4;i++){const m=spike(dragon,1.52-i*.15,.93+i*.03,side*(.19+i*.04),
 for(let i=0;i<7;i++){const x=-.1-i*.38,y=.16-i*i*.014;const ridge=spike(tail,x,y,0,.22-i*.016,i%2?gold:armor);ridge.rotation.z=-.35}
 for(const side of [-1,1])for(const x of [-.83,.86]){const shoulder=ball(dragon,armor,x,-.48,side*.53,.35,.31,.26);shoulder.rotation.z=x>0?.2:-.2}
 
+
+
+// Estudo anatômico 3D: focinho alongado, placas ósseas, espinhos e pupilas.
+const muzzle=new THREE.Group();dragon.add(muzzle);muzzle.position.set(2.13,.39,0);
+const muzzleTop=ball(muzzle,scale,.27,.08,0,.53,.16,.29);muzzleTop.rotation.z=-.08;
+const muzzleBridge=ball(muzzle,armor,.48,.16,0,.30,.09,.23);muzzleBridge.rotation.z=-.14;
+for(const side of [-1,1]){
+  const nostril=ball(muzzle,dark,.66,.21,side*.15,.06,.028,.045);
+  const eyeSocket=ball(dragon,armor,1.94,.69,side*.285,.19,.105,.07);
+  const iris=ball(dragon,eye,2.02,.71,side*.342,.065,.047,.025);
+  ball(dragon,dark,2.04,.71,side*.364,.018,.041,.012);
+  for(let k=0;k<3;k++){const ridge=ball(muzzle,armor,.1+k*.18,.18-k*.02,side*(.23-k*.018),.12,.045,.05);ridge.rotation.z=-.17}
+  for(let k=0;k<3;k++){const tooth=new THREE.Mesh(new THREE.ConeGeometry(.026,.10+k*.012,5),emberGold);tooth.rotation.z=Math.PI;tooth.position.set(.3+k*.15,-.08,side*.18);muzzle.add(tooth)}
+}
+const throat=ball(dragon,dark,1.39,-.01,0,.65,.23,.34);throat.rotation.z=.23;
+for(let k=0;k<6;k++){const p=ball(dragon,armor,1.04+k*.18,-.17+k*.047,.33-k*.017,.14,.08,.065);p.rotation.z=.2;const q=p.clone();q.position.z*=-1;dragon.add(q)}
+// Chifres direcionados para trás, em segmentos curvos.
+for(const side of [-1,1]){segment(dragon,gold,[1.63,.93,side*.25],[1.42,1.35,side*.38],.11,.078);segment(dragon,gold,[1.42,1.35,side*.38],[1.08,1.50,side*.48],.078,.014)}
 
 // Terreno irregular: múltiplas rochas em vez de cones isolados.
 const rockMat=new THREE.MeshStandardMaterial({color:0x1b1117,roughness:.98,flatShading:true});
