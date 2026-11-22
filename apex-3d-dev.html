@@ -127,6 +127,82 @@ for(let k=0;k<6;k++){const p=ball(dragon,armor,1.04+k*.18,-.17+k*.047,.33-k*.017
 // Chifres direcionados para trás, em segmentos curvos.
 for(const side of [-1,1]){segment(dragon,gold,[1.63,.93,side*.25],[1.42,1.35,side*.38],.11,.078);segment(dragon,gold,[1.42,1.35,side*.38],[1.08,1.50,side*.48],.078,.014)}
 
+
+// APEX DRAGON — protótipo avançado: malhas orgânicas contínuas, asas nervuradas e rig próprio.
+// O modelo anterior é ocultado por completo, evitando a silhueta composta de esferas.
+for(const part of [...dragon.children])part.visible=false;
+const apexDragon=new THREE.Group();dragon.add(apexDragon);
+const obsidian=new THREE.MeshStandardMaterial({color:0x19080e,roughness:.64,metalness:.23,flatShading:false});
+const crimson=new THREE.MeshStandardMaterial({color:0x4e0b18,roughness:.55,metalness:.22,side:THREE.DoubleSide});
+const boneGold=new THREE.MeshStandardMaterial({color:0x9e6c36,roughness:.43,metalness:.56});
+const bellyMat=new THREE.MeshStandardMaterial({color:0x351016,roughness:.75,metalness:.12});
+const wingMat=new THREE.MeshStandardMaterial({color:0x580d1c,roughness:.72,metalness:.08,side:THREE.DoubleSide});
+const glowEye=new THREE.MeshBasicMaterial({color:0xff381a});
+function organicTube(parent,points,radii,material,sides=12){
+ const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));
+ const steps=Math.max(16,points.length*8),vertices=[],uv=[],indices=[];
+ for(let i=0;i<=steps;i++){
+  const t=i/steps,pos=curve.getPoint(t),tan=curve.getTangent(t).normalize();
+  let axis=new THREE.Vector3(0,0,1);if(Math.abs(axis.dot(tan))>.96)axis.set(0,1,0);
+  const n=new THREE.Vector3().crossVectors(tan,axis).normalize(),b=new THREE.Vector3().crossVectors(tan,n).normalize();
+  const f=t*(radii.length-1),k=Math.min(radii.length-2,Math.floor(f)),a=f-k;
+  const radius=radii[k]*(1-a)+radii[k+1]*a;
+  for(let j=0;j<=sides;j++){const theta=j/sides*Math.PI*2;
+   const p=pos.clone().addScaledVector(n,Math.cos(theta)*radius).addScaledVector(b,Math.sin(theta)*radius*.78);
+   vertices.push(p.x,p.y,p.z);uv.push(t,j/sides);
+   if(i<steps&&j<sides){const q=i*(sides+1)+j;indices.push(q,q+sides+1,q+1,q+1,q+sides+1,q+sides+2)}
+  }
+ }
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();
+ const mesh=new THREE.Mesh(g,material);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+}
+function oval(parent,mat,x,y,z,sx,sy,sz){const mesh=new THREE.Mesh(new THREE.SphereGeometry(1,24,16),mat);mesh.position.set(x,y,z);mesh.scale.set(sx,sy,sz);mesh.castShadow=true;parent.add(mesh);return mesh}
+// Tronco alongado e pescoço em S, ambos de malha contínua.
+organicTube(apexDragon,[[-1.6,-.12,0],[-1.15,.04,0],[-.5,.18,0],[.3,.14,0],[.94,.2,0],[1.38,.52,0],[1.63,.84,0],[1.91,1.02,0]],[.31,.57,.76,.70,.49,.36,.29,.24],obsidian,20);
+organicTube(apexDragon,[[-.95,-.30,.015],[-.3,-.38,.015],[.45,-.32,.015],[1.04,.04,.015],[1.43,.47,.015]],[.33,.39,.32,.23,.15],bellyMat,14);
+const head=new THREE.Group();head.position.set(1.81,1.0,0);apexDragon.add(head);
+oval(head,obsidian,.08,0,0,.47,.31,.32);
+organicTube(head,[[.1,-.09,0],[.4,-.11,0],[.77,-.15,0],[1.04,-.17,0]],[.25,.24,.17,.09],obsidian,14);
+organicTube(head,[[.22,-.24,0],[.52,-.27,0],[.88,-.26,0]],[.13,.10,.035],bellyMat,12);
+for(const side of [-1,1]){
+ oval(head,boneGold,.23,.10,side*.27,.23,.105,.07);
+ oval(head,glowEye,.34,.11,side*.333,.085,.055,.024);
+ oval(head,obsidian,.36,.11,side*.35,.023,.052,.012);
+ oval(head,obsidian,.84,-.07,side*.12,.065,.025,.04);
+ organicTube(head,[[-.1,.22,side*.19],[-.32,.48,side*.30],[-.60,.65,side*.43],[-.86,.61,side*.52]],[.14,.12,.065,.006],boneGold,9);
+ organicTube(head,[[.05,.24,side*.26],[-.14,.39,side*.42],[-.35,.40,side*.55]],[.09,.06,.005],boneGold,8);
+ for(let k=0;k<4;k++)organicTube(head,[[.39+k*.13,-.19,side*.17],[.41+k*.13,-.31,side*.17]],[.035,.002],boneGold,6);
+}
+// Espinhos dorsais inclinados, progressivamente menores.
+for(let i=0;i<13;i++){const x=-1.35+i*.245;const y=.36+.23*Math.sin(i/12*Math.PI);
+ organicTube(apexDragon,[[x,y,0],[x-.08,y+.17,0],[x-.24,y+.33+(i%3)*.035,0]],[.115,.075,.004],boneGold,7)}
+// Quatro membros com cotovelos e garras, modelados em segmentos cônicos contínuos.
+for(const x of [-1.05,.88])for(const side of [-1,1]){
+ const z=side*.48;
+ organicTube(apexDragon,[[x,-.19,z],[x+.05,-.60,side*.70],[x+.25,-1.00,side*.67],[x+.43,-1.11,side*.78]],[.27,.23,.12,.085],obsidian,12);
+ for(let k=-1;k<=1;k++)organicTube(apexDragon,[[x+.42,-1.09,side*.78+k*.075],[x+.58,-1.17,side*.78+k*.11]],[.048,.002],boneGold,7);
+}
+const apexTail=new THREE.Group();apexTail.position.set(-1.52,-.08,0);apexDragon.add(apexTail);
+organicTube(apexTail,[[0,0,0],[-.5,-.05,0],[-1.1,-.28,0],[-1.7,-.48,.1],[-2.25,-.38,.19],[-2.7,-.10,.24]],[.29,.23,.16,.11,.065,.004],obsidian,14);
+for(let i=1;i<8;i++){const x=-i*.33,y=-.06-i*.055;organicTube(apexTail,[[x,y,0],[x-.09,y+.18,0],[x-.19,y+.23,0]],[.09,.06,.003],boneGold,7)}
+function apexWing(side){
+ const pivot=new THREE.Group();pivot.position.set(-.45,.48,side*.36);apexDragon.add(pivot);
+ const rays=[[-.1,.2,0],[-.38,2.75,side*.48],[-1.28,3.12,side*1.30],[-2.65,2.74,side*1.82],[-3.72,1.88,side*2.2],[-3.55,.55,side*2.38]];
+ const trailing=[[-2.75,.88,side*1.82],[-2.05,1.27,side*1.42],[-1.38,.65,side*.76],[-.52,.10,side*.12]];
+ const outline=[rays[0],...rays.slice(1),...trailing];
+ const center=[-1.20,1.37,side*.70],verts=[],indices=[];
+ // Superfície com curvatura 3D e recortes entre os dedos.
+ for(let k=0;k<outline.length;k++){const p=outline[k];verts.push(p[0],p[1],p[2]);}
+ const ci=verts.length/3;verts.push(...center);
+ for(let k=0;k<outline.length;k++)indices.push(ci,k,(k+1)%outline.length);
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));g.setIndex(indices);g.computeVertexNormals();
+ const membraneMesh=new THREE.Mesh(g,wingMat);membraneMesh.castShadow=true;membraneMesh.receiveShadow=true;pivot.add(membraneMesh);
+ for(let k=1;k<rays.length;k++)organicTube(pivot,[rays[0],[-.42,1.12,side*.30],rays[k]],[.13,.085,.012],k===1?boneGold:obsidian,9);
+ organicTube(pivot,[rays[0],[-.40,1.05,side*.20],[-.52,2.10,side*.34],rays[1]],[.18,.14,.09,.012],boneGold,10);
+ return pivot;
+}
+const apexLeft=apexWing(-1),apexRight=apexWing(1);
+
 // Terreno irregular: múltiplas rochas em vez de cones isolados.
 const rockMat=new THREE.MeshStandardMaterial({color:0x1b1117,roughness:.98,flatShading:true});
 function mountain(x,sz){const root=new THREE.Group();root.position.set(x,-3.7,-1.3);scene.add(root);
@@ -199,10 +275,11 @@ dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayPr
 // Batimento contínuo durante o voo; a rolagem determina a fase narrativa.
 const flapPhase=t*(2.2+flight*3.1);
 const flap=(reducedMotion?0:Math.sin(flapPhase))*(.035+flight*.54)*(1-settle);
-left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
-left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
-left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
-tail.rotation.z=reducedMotion?0:Math.sin(t*1.8)*(.04+flight*.14);tail.rotation.y=reducedMotion?0:Math.sin(t*1.3)*(.035+flight*.12);emblem.rotation.y=reducedMotion?0:Math.sin(displayProgress*3)*.035;
+apexLeft.rotation.x=.12+flap;apexRight.rotation.x=-.12-flap;
+apexLeft.rotation.z=-.10+lift*.14-settle*.2;apexRight.rotation.z=-.10+lift*.14-settle*.2;
+apexLeft.rotation.y=lift*.10;apexRight.rotation.y=-lift*.10;
+apexTail.rotation.z=reducedMotion?0:Math.sin(t*1.8)*(.04+flight*.14);apexTail.rotation.y=reducedMotion?0:Math.sin(t*1.3)*(.035+flight*.12);
+head.rotation.z=reducedMotion?0:Math.sin(t*.9)*.035;emblem.rotation.y=reducedMotion?0:Math.sin(displayProgress*3)*.035;
 const mobile=innerWidth<700;camera.position.x=cruise*5.0;camera.position.y=5+lift*.45-settle*.3;camera.position.z=mobile?25:19;camera.lookAt(cruise*4.0,settle*.1,0);const burst=ease((displayProgress-.77)/.035)*(1-ease((displayProgress-.85)/.11));
 impact.material.opacity=burst*.7;
 const impactArray=impactGeometry.attributes.position.array;
