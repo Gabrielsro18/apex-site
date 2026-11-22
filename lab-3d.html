@@ -34,7 +34,13 @@ const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(h
 const shape=[[0,0,0],[-.38,2.75,side*.65],[-1.15,2.38,side*1.5],[-1.62,1.45,side*2.12],[-2.3,1.72,side*2.2],[-2.8,.65,side*2.55],[-2.12,.94,side*1.24],[-1.52,.32,side*.37]];
 const vertices=new Float32Array(shape.flat()),geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(vertices,3));
 geom.setIndex([0,1,7,1,2,7,2,3,7,3,6,7,3,4,6,4,5,6]);geom.computeVertexNormals();
-hinge.add(new THREE.Mesh(geom,membrane));
+const skin=new THREE.Mesh(geom,membrane);skin.castShadow=true;skin.receiveShadow=true;hinge.add(skin);
+// Nervuras secundárias em dourado envelhecido, seguindo a membrana.
+for(const target of [2,3,4,5,6]){
+ const a=new THREE.Vector3(-.16,.18,0),b=new THREE.Vector3(...shape[target]);
+ const v=b.clone().sub(a),bone=new THREE.Mesh(new THREE.CylinderGeometry(.018,.055,v.length(),6),target===5?gold:armor);
+ bone.position.copy(a.add(b).multiplyScalar(.5));bone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize());hinge.add(bone)
+}
 for(const [i,j] of [[0,1],[1,2],[2,3],[3,4],[4,5],[0,7],[7,6]]){
 const A=new THREE.Vector3(...shape[i]),B=new THREE.Vector3(...shape[j]),d=B.clone().sub(A);
 const bone=new THREE.Mesh(new THREE.CylinderGeometry(.055,.105,d.length(),7),i===0?gold:armor);
@@ -111,12 +117,12 @@ const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push
 const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
 function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1);scrollHint.style.opacity=progress>.22?'0':'1';scrollHint.style.visibility=progress>.27?'hidden':'visible'}
 addEventListener('scroll',update,{passive:true});update();
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer&&dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=false;dragonMixer.setTime(displayProgress*duration)}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer&&dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=false;dragonMixer.setTime(displayProgress*duration)}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle),bank=ease((displayProgress-.43)/.14)*(1-ease((displayProgress-.66)/.12));
 startShadow.material.opacity=.6*(1-lift);endShadow.material.opacity=.6*settle;
 dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+(reducedMotion?0:Math.sin(displayProgress*23)*.08*flight),1);
-dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
+dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise+.13*bank)*(1-settle));dragon.scale.setScalar(1-settle*.18);
 const flap=(reducedMotion?0:Math.sin(displayProgress*46))*(.07+flight*.43)*(1-settle);
-left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
+left.rotation.x=.22+flap+bank*.08;right.rotation.x=-.22-flap+bank*.04;
 left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
 left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
 tail.rotation.z=reducedMotion?0:Math.sin(displayProgress*19)*.16*flight;tail.rotation.y=reducedMotion?0:Math.sin(displayProgress*14)*.12*flight;emblem.rotation.y=reducedMotion?0:Math.sin(displayProgress*3)*.035;
