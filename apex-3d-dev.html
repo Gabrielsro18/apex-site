@@ -89,6 +89,27 @@ const geom=new THREE.ConeGeometry(sz*(.24+i%3*.065),h,5,2);
 const m=new THREE.Mesh(geom,i%5===0?dark:rockMat);m.position.set(Math.cos(angle)*rad,h*.32,Math.sin(angle)*rad);m.rotation.set((i%3-1)*.12,angle,(i%4-2)*.1);m.castShadow=true;m.receiveShadow=true;root.add(m)}
 const summit=new THREE.Mesh(new THREE.DodecahedronGeometry(sz*.36,0),rockMat);summit.position.y=sz*.93;summit.receiveShadow=true;root.add(summit);return root}
 mountain(-3,3.5);mountain(5,3.6);
+
+// Castelo tridimensional em segundo plano: torres, muralhas e pináculos.
+const castle=new THREE.Group();castle.position.set(-1.2,-1.25,-10.5);castle.scale.setScalar(1.12);scene.add(castle);
+const stone=new THREE.MeshStandardMaterial({color:0x151118,roughness:.97,flatShading:true});
+const stoneEdge=new THREE.MeshStandardMaterial({color:0x2a1a24,roughness:.91,flatShading:true});
+const windowGlow=new THREE.MeshBasicMaterial({color:0x8f241e});
+function castleBlock(x,y,z,w,h,d,mat=stone){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;castle.add(m);return m}
+function tower(x,z,r,h){const base=new THREE.Mesh(new THREE.CylinderGeometry(r*.86,r,h,8),stone);base.position.set(x,h/2,z);base.castShadow=true;castle.add(base);
+const roof=new THREE.Mesh(new THREE.ConeGeometry(r*1.18,r*2.5,8),stoneEdge);roof.position.set(x,h+r*1.1,z);roof.castShadow=true;castle.add(roof);
+for(let k=0;k<8;k++){const a=k*Math.PI/4;const crenel=castleBlock(x+Math.cos(a)*r*.8,h+.13,z+Math.sin(a)*r*.8,.24,.35,.24,stoneEdge);crenel.rotation.y=a}
+for(let k=0;k<2;k++){const w=castleBlock(x,h*.43+k*.72,z+r*.86,.13,.38,.035,windowGlow);w.rotation.z=.03}}
+castleBlock(0,1.35,0,7,2.7,1.35);
+castleBlock(0,2.75,-.05,3.1,2.4,1.1,stoneEdge);
+tower(-3.6,.2,.85,4.3);tower(3.6,.2,.85,4.3);tower(-1.35,-.5,.65,5.1);tower(1.35,-.5,.65,5.1);tower(0,-.75,.7,6.2);
+for(let i=-11;i<=11;i++){const x=i*.3;castleBlock(x,2.87,0,.21,.46,.32,stoneEdge)}
+for(let i=0;i<7;i++){const x=-2.5+i*.82;castleBlock(x,1.5,.72,.12,.33,.04,windowGlow)}
+// Fissuras de lava são tubos 3D sobre o relevo, não imagens planas.
+const lavaMat=new THREE.MeshStandardMaterial({color:0x741b13,emissive:0xa61a0d,emissiveIntensity:.48,roughness:.55});
+for(let j=0;j<8;j++){const x=-6+j*1.6,points=[];for(let k=0;k<9;k++){const t=k/8;points.push(new THREE.Vector3(x+Math.sin(t*7+j)*.35,-3.62+.13*Math.sin(t*11+j),-2.5+t*4.8))}
+const tube=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),35,.035+(j%3)*.014,5,false),lavaMat);scene.add(tube)}
+
 const emblem=new THREE.Group();scene.add(emblem);emblem.position.set(5,-.4,-1);const bar=(x,y,z,w,h,rot)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.42),gold);m.position.set(x,y,z);m.rotation.z=rot;m.castShadow=true;emblem.add(m)};bar(-.8,0,0,.42,3.5,-.46);bar(.8,0,0,.42,3.5,.46);bar(0,-.35,.1,1.65,.35,0);const jewel=new THREE.Mesh(new THREE.OctahedronGeometry(.27),new THREE.MeshStandardMaterial({color:0xc51323,emissive:0x65000b,emissiveIntensity:.7,metalness:.35,roughness:.18}));jewel.position.set(0,.45,.35);emblem.add(jewel);
 // Névoa volumétrica simulada em camadas transparentes.
 const hazeMat=new THREE.MeshBasicMaterial({color:0x5a1c23,transparent:true,opacity:.095,depthWrite:false,side:THREE.DoubleSide});
