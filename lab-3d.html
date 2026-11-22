@@ -100,10 +100,14 @@ impactGeometry.setAttribute('position',new THREE.Float32BufferAttribute(impactPo
 const impact=new THREE.Points(impactGeometry,new THREE.PointsMaterial({color:0xe0a45e,size:.07,transparent:true,opacity:0,depthWrite:false}));
 impact.position.set(5,-1.9,1);scene.add(impact);
 const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push((Math.random()-.5)*34,(Math.random()-.5)*15,(Math.random()-.5)*15);particles.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));scene.add(new THREE.Points(particles,new THREE.PointsMaterial({color:0xf4552e,size:.05,transparent:true,opacity:.65})));
-const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
-function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1)}
-addEventListener('scroll',update,{passive:true});update();
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer)dragonMixer.update(reducedMotion?0:dt);const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
+const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0,manual=false,started=performance.now();const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+function update(){if(!manual)return;progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1)}
+function enableManual(){if(manual)return;manual=true;update()}
+addEventListener('wheel',enableManual,{passive:true});
+addEventListener('touchstart',enableManual,{passive:true});
+addEventListener('keydown',event=>{if(['ArrowDown','ArrowUp','PageDown','PageUp','Home','End',' '].includes(event.key))enableManual()});
+addEventListener('scroll',()=>{if(!manual&&scrollY>4)manual=true;update()},{passive:true});
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;if(!manual)progress=reducedMotion?0:Math.min(1,(performance.now()-started)/24000);displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer)dragonMixer.update(reducedMotion?0:dt);const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
 dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+Math.sin(t*1.7)*.08*lift*(1-settle),1);
 dragon.rotation.set(-.03*lift,.03+cruise*.16+Math.sin(t*.5)*.035*flight,(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
 const flap=(reducedMotion?0:Math.sin(t*(2.5+lift*3.2)))*(.13+lift*.37)*(1-settle);
