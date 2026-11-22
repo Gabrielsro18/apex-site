@@ -103,6 +103,20 @@ const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push
 const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
 function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1);scrollHint.style.opacity=progress>.22?'0':'1'}
 addEventListener('scroll',update,{passive:true});update();
+// Controles alternativos sem alterar a cena 3D validada: setas, Page Up/Down, Home e End.
+addEventListener('keydown',event=>{
+ if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+ if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+ const step=innerHeight*.68;
+ let target=null;
+ if(event.key==='ArrowDown'||event.key==='PageDown')target=scrollY+step;
+ else if(event.key==='ArrowUp'||event.key==='PageUp')target=scrollY-step;
+ else if(event.key==='Home')target=0;
+ else if(event.key==='End')target=stage.offsetHeight-innerHeight;
+ if(target===null)return;
+ event.preventDefault();
+ scrollTo({top:Math.max(0,Math.min(target,stage.offsetHeight-innerHeight)),behavior:reducedMotion?'instant':'smooth'});
+});
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer){dragonMixer.update(0);if(dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=true;dragonClip.time=displayProgress*duration;dragonMixer.setTime(dragonClip.time)}}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
 dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+(reducedMotion?0:Math.sin(displayProgress*23)*.08*flight),1);
 dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
