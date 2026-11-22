@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>APEX | Experiência 3D — Desenvolvimento</title>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#08070a;color:#e9bc67;font-family:Georgia,serif}main{height:500vh}#view{position:sticky;top:0;height:100svh;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#2a1015,#08070a 72%)}canvas{display:block;width:100%;height:100%}header{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:22px 5vw;pointer-events:none}header b{font-size:clamp(22px,3vw,38px);letter-spacing:.2em}header span{font:10px system-ui;letter-spacing:.15em}.actions{position:absolute;z-index:3;bottom:8%;left:50%;transform:translateX(-50%);display:flex;gap:14px;opacity:0;pointer-events:none;transition:opacity .25s}.actions a{display:inline-flex;justify-content:center;min-width:150px;padding:15px 20px;border:1px solid #b99555;border-radius:4px;background:#160d15d9;color:#f5dcad;text-decoration:none;font:600 13px system-ui;letter-spacing:.07em;backdrop-filter:blur(8px)}.actions a:hover{background:#38202a}.actions a:focus-visible{outline:3px solid #e5b75d;outline-offset:3px}.scroll-hint{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);z-index:20;color:rgba(255,226,168,.92);pointer-events:none;opacity:1;transition:opacity .65s ease;animation:hintFloat 2.2s ease-in-out infinite}.scroll-hint svg{display:block;width:62px;height:62px;filter:drop-shadow(0 0 14px rgba(255,186,95,.65))}@keyframes hintFloat{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,9px)}}@media(prefers-reduced-motion:reduce){.scroll-hint{animation:none}}#note{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font:11px system-ui;color:#c9b8a0;opacity:.75;white-space:nowrap}#error{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:25px;color:#eee}#view:has(#error[style*="grid"]) canvas{display:none}@media(max-width:600px){header span{font-size:8px;letter-spacing:.05em}.actions{width:90%;gap:8px}.actions a{min-width:0;flex:1;padding:13px 9px}}</style><style>.dev-marker{position:absolute;z-index:8;top:72px;left:5vw;font:600 10px system-ui;letter-spacing:.12em;color:#c6a99d;background:#120a0ecc;padding:8px 11px;border:1px solid #6d3035}.dev-marker b{color:#e5b75d}</style></head><body><main id="stage"><div id="view"><header><b>APEX</b><span>PROJETO 100% TRIDIMENSIONAL</span></header><div class="dev-marker"><b>3D</b> • LABORATÓRIO INDEPENDENTE</div><div id="error">Não foi possível carregar o motor 3D. Verifique sua conexão e o suporte a WebGL.</div><div class="scroll-hint" id="scrollHint" aria-label="Role a página para baixo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></div><nav class="actions" id="actions" aria-label="Comunidade APEX"><a id="whatsapp" href="#">WhatsApp</a><a id="discord" href="#">Discord</a></nav></div></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+try{
+const LINKS={whatsapp:'https://chat.whatsapp.com/DxlFeIkSrod55x6ZfSsQ5R',discord:'https://discord.gg/HZjaWQbrF'};
+for(const key of ['whatsapp','discord']){const link=document.getElementById(key);if(LINKS[key]){link.href=LINKS[key];link.target='_blank';link.rel='noopener noreferrer'}else{link.addEventListener('click',event=>{event.preventDefault();alert('O link do '+key+' ainda não foi configurado.')})}}
+const actions=document.getElementById('actions'),scrollHint=document.getElementById('scrollHint');
+const view=document.getElementById('view'),scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0a080b,.022);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,300);camera.position.set(0,5,19);
+camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.75));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.04;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;view.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0x777c9c,0x180406,1.25));const sun=new THREE.DirectionalLight(0xe3d2c2,2.0);sun.position.set(-4,9,6);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.left=-15;sun.shadow.camera.right=15;sun.shadow.camera.top=15;sun.shadow.camera.bottom=-15;scene.add(sun);const red=new THREE.PointLight(0xc72218,65,30);red.position.set(2,-1,1);scene.add(red);const rim=new THREE.DirectionalLight(0xb02c36,2.8);rim.position.set(1,4,-8);scene.add(rim);
+const dark=new THREE.MeshStandardMaterial({color:0x100b11,roughness:.77,metalness:.18}),scale=new THREE.MeshStandardMaterial({color:0x290b16,roughness:.65,metalness:.22}),gold=new THREE.MeshStandardMaterial({color:0x8f6337,roughness:.48,metalness:.56}),membrane=new THREE.MeshStandardMaterial({color:0x390711,side:THREE.DoubleSide,roughness:.84,metalness:0}),eye=new THREE.MeshBasicMaterial({color:0xff2a16});
+function ball(parent,mat,x,y,z,sx,sy,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);m.castShadow=true;parent.add(m);return m}
+function spike(parent,x,y,z,len,mat=gold){const m=new THREE.Mesh(new THREE.ConeGeometry(.12,len,6),mat);m.position.set(x,y+len/2,z);parent.add(m);return m}
+const dragon=new THREE.Group();scene.add(dragon);ball(dragon,scale,0,0,0,1.45,.7,.64);ball(dragon,dark,0,-.3,0,1.05,.48,.59);ball(dragon,scale,1.15,.33,0,.72,.5,.48);ball(dragon,scale,1.75,.55,0,.5,.38,.36);ball(dragon,dark,2.12,.38,0,.48,.18,.31);
+for(const z of [-.24,.24]){ball(dragon,eye,1.95,.67,z,.085,.06,.045);spike(dragon,1.52,.9,z,.42)}
+for(const x of [-.85,.9])for(const z of [-.45,.45]){ball(dragon,dark,x,-.65,z,.27,.7,.24);spike(dragon,x,-1.35,z,.22,gold)}
+for(let i=0;i<9;i++)spike(dragon,-1.2+i*.32,.57-Math.abs(i-4)*.035,0,.28+i*.017);
+// Detalhes de superfície: escamas em camadas, crista e chifres curvos.
+const armor=new THREE.MeshStandardMaterial({color:0x1b0b12,roughness:.66,metalness:.27});
+const emberGold=new THREE.MeshStandardMaterial({color:0xb48348,roughness:.42,metalness:.66});
+function segment(parent,mat,a,b,r1,r2){const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),dir=B.clone().sub(A),mesh=new THREE.Mesh(new THREE.CylinderGeometry(r2,r1,dir.length(),8),mat);mesh.position.copy(A.add(B).multiplyScalar(.5));mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());parent.add(mesh);return mesh}
+for(let row=0;row<5;row++){const x=-1.05+row*.48;const radius=Math.sqrt(Math.max(.15,1-(x/1.55)**2));for(let k=0;k<7;k++){const theta=(k/6)*Math.PI*.82+.12;const y=.64*radius*Math.cos(theta),z=.65*radius*Math.sin(theta);const m=ball(dragon,(row+k)%4===0?armor:scale,x,y,z,.23,.105,.13);m.rotation.z=-.28;const back=ball(dragon,armor,x,y,-z,.23,.105,.13);back.rotation.z=-.28}}
+for(const side of [-1,1]){segment(dragon,gold,[1.63,.88,side*.22],[1.47,1.25,side*.34],.14,.09);segment(dragon,gold,[1.47,1.25,side*.34],[1.18,1.44,side*.44],.09,.012);segment(dragon,armor,[2.05,.39,side*.21],[2.44,.31,side*.27],.12,.02)}
+for(let i=0;i<5;i++){const x=1.1+i*.19;spike(dragon,x,.77-i*.05,0,.17+i*.02,emberGold)}
+for(const side of [-1,1])for(const x of [-.88,.86]){for(let claw=0;claw<3;claw++)segment(dragon,emberGold,[x,-1.22,side*.43+(claw-1)*.11],[x+.13,-1.47,side*.43+(claw-1)*.13],.055,.004)}
+const tail=new THREE.Group();tail.position.set(-1.25,-.08,0);dragon.add(tail);for(let i=0;i<7;i++){const seg=ball(tail,i%2?dark:scale,-i*.38,-i*i*.014,0,.43-i*.035,.22-i*.017,.2-i*.016);seg.rotation.z=i*.11}spike(tail,-2.6,-.85,0,.5);
+function wing(side){
+const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(hinge);
+const shape=[[0,0,0],[-.38,2.75,side*.65],[-1.15,2.38,side*1.5],[-1.62,1.45,side*2.12],[-2.3,1.72,side*2.2],[-2.8,.65,side*2.55],[-2.12,.94,side*1.24],[-1.52,.32,side*.37]];
+const vertices=new Float32Array(shape.flat()),geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+geom.setIndex([0,1,7,1,2,7,2,3,7,3,6,7,3,4,6,4,5,6]);geom.computeVertexNormals();
+hinge.add(new THREE.Mesh(geom,membrane));
+for(const [i,j] of [[0,1],[1,2],[2,3],[3,4],[4,5],[0,7],[7,6]]){
+const A=new THREE.Vector3(...shape[i]),B=new THREE.Vector3(...shape[j]),d=B.clone().sub(A);
+const bone=new THREE.Mesh(new THREE.CylinderGeometry(.055,.105,d.length(),7),i===0?gold:armor);
+bone.position.copy(A.add(B).multiplyScalar(.5));bone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());hinge.add(bone)}
+for(const i of [2,4,5]){const p=shape[i],tip=new THREE.Mesh(new THREE.ConeGeometry(.09,.32,5),gold);tip.position.set(p[0]-.08,p[1]+.14,p[2]);tip.rotation.z=-.45;hinge.add(tip)}
+return hinge}
+const left=wing(-1),right=wing(1);
+// Integração preparada para um dragão autoral rigado em assets/apex-dragon.glb.
+// A geometria de estudo permanece como fallback quando o arquivo não existir.
+let dragonMixer=null,dragonClip=null;
+const proceduralParts=[...dragon.children];
+new GLTFLoader().load('./assets/apex-dragon.glb',gltf=>{
+  const model=gltf.scene;
+  model.traverse(obj=>{if(obj.isMesh){obj.castShadow=true;obj.receiveShadow=true}});
+  const bounds=new THREE.Box3().setFromObject(model),size=bounds.getSize(new THREE.Vector3());
+  const maxDim=Math.max(size.x,size.y,size.z);
+  if(!Number.isFinite(maxDim)||maxDim<=0)return;
+  model.scale.setScalar(4.2/maxDim);
+  const scaled=new THREE.Box3().setFromObject(model),center=scaled.getCenter(new THREE.Vector3());
+  model.position.sub(center);
+  dragon.add(model);
+  for(const part of proceduralParts)part.visible=false;
+  left.visible=false;right.visible=false;
+  if(gltf.animations.length){dragonMixer=new THREE.AnimationMixer(model);dragonClip=dragonMixer.clipAction(gltf.animations[0]);dragonClip.play()}
+},undefined,()=>{/* Fallback procedural enquanto o GLB não estiver disponível. */});
+
+// Dedos estruturais das asas, conectados ao corpo e à borda externa.
+for(const [hinge,side] of [[left,-1],[right,1]]) {
+  const digits=[[-.38,2.75,side*.65],[-1.15,2.38,side*1.5],[-1.62,1.45,side*2.12],[-2.3,1.72,side*2.2],[-2.8,.65,side*2.55]];
+  for(let i=1;i<digits.length;i++){
+    const from=[-.12,.18,0],to=digits[i];
+    segment(hinge,i===digits.length-1?gold:armor,from,to,.075,.017);
+  }
+}
+
+// Anatomia complementar: placas no pescoço, mandíbula, ombros e espinhos da cauda.
+for(let i=0;i<7;i++){const x=1.02+i*.17,y=.34+i*.036;const plate=ball(dragon,i%3===0?gold:armor,x,y,-.31+i*.012,.16,.16,.09);plate.rotation.z=-.25;const plate2=ball(dragon,i%3===0?gold:armor,x,y,.31-i*.012,.16,.16,.09);plate2.rotation.z=-.25}
+const jaw=ball(dragon,dark,2.14,.18,0,.48,.105,.25);jaw.rotation.z=-.075;
+for(const side of [-1,1]){for(let i=0;i<3;i++){const x=2.25+i*.12;const tooth=new THREE.Mesh(new THREE.ConeGeometry(.035,.13,5),emberGold);tooth.position.set(x,.21,side*.16);tooth.rotation.z=Math.PI;dragon.add(tooth)}
+const brow=ball(dragon,armor,1.95,.76,side*.24,.27,.075,.12);brow.rotation.z=-.2;
+const cheek=ball(dragon,scale,1.98,.46,side*.29,.35,.15,.12);cheek.rotation.z=-.15;
+for(let i=0;i<4;i++){const m=spike(dragon,1.52-i*.15,.93+i*.03,side*(.19+i*.04),.22+i*.07,armor);m.rotation.z=-.35}}
+for(let i=0;i<7;i++){const x=-.1-i*.38,y=.16-i*i*.014;const ridge=spike(tail,x,y,0,.22-i*.016,i%2?gold:armor);ridge.rotation.z=-.35}
+for(const side of [-1,1])for(const x of [-.83,.86]){const shoulder=ball(dragon,armor,x,-.48,side*.53,.35,.31,.26);shoulder.rotation.z=x>0?.2:-.2}
+
+
+// Terreno irregular: múltiplas rochas em vez de cones isolados.
+const rockMat=new THREE.MeshStandardMaterial({color:0x1b1117,roughness:.98,flatShading:true});
+function mountain(x,sz){const root=new THREE.Group();root.position.set(x,-3.7,-1.3);scene.add(root);
+for(let i=0;i<14;i++){const angle=i*2.399,rad=Math.sqrt(i/14)*sz*.74,h=sz*(.55+Math.max(0,1-i/15)*1.3);
+const geom=new THREE.ConeGeometry(sz*(.24+i%3*.065),h,5,2);
+const m=new THREE.Mesh(geom,i%5===0?dark:rockMat);m.position.set(Math.cos(angle)*rad,h*.32,Math.sin(angle)*rad);m.rotation.set((i%3-1)*.12,angle,(i%4-2)*.1);m.castShadow=true;m.receiveShadow=true;root.add(m)}
+const summit=new THREE.Mesh(new THREE.DodecahedronGeometry(sz*.36,0),rockMat);summit.position.y=sz*.93;summit.receiveShadow=true;root.add(summit);return root}
+mountain(-3,3.5);mountain(5,3.6);
+const emblem=new THREE.Group();scene.add(emblem);emblem.position.set(5,-.4,-1);const bar=(x,y,z,w,h,rot)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.42),gold);m.position.set(x,y,z);m.rotation.z=rot;m.castShadow=true;emblem.add(m)};bar(-.8,0,0,.42,3.5,-.46);bar(.8,0,0,.42,3.5,.46);bar(0,-.35,.1,1.65,.35,0);const jewel=new THREE.Mesh(new THREE.OctahedronGeometry(.27),new THREE.MeshStandardMaterial({color:0xc51323,emissive:0x65000b,emissiveIntensity:.7,metalness:.35,roughness:.18}));jewel.position.set(0,.45,.35);emblem.add(jewel);
+// Névoa volumétrica simulada em camadas transparentes.
+const hazeMat=new THREE.MeshBasicMaterial({color:0x5a1c23,transparent:true,opacity:.095,depthWrite:false,side:THREE.DoubleSide});
+const haze=[];for(let i=0;i<7;i++){const m=new THREE.Mesh(new THREE.PlaneGeometry(22,4),hazeMat.clone());m.position.set((i%3-1)*4,-2+i*.34,-3-i*.6);m.rotation.x=-.17;m.material.opacity=.035+(i%3)*.026;scene.add(m);haze.push(m)}
+// Partículas de impacto reveladas apenas no pouso.
+const impactGeometry=new THREE.BufferGeometry(),impactPoints=[],impactVectors=[];
+for(let i=0;i<110;i++){const a=i*2.399963,spread=.3+(i%17)/17*2.3;impactPoints.push(0,0,0);impactVectors.push(Math.cos(a)*spread,(i%11)/11*1.6,Math.sin(a)*spread)}
+impactGeometry.setAttribute('position',new THREE.Float32BufferAttribute(impactPoints,3));
+const impact=new THREE.Points(impactGeometry,new THREE.PointsMaterial({color:0xe0a45e,size:.07,transparent:true,opacity:0,depthWrite:false}));
+impact.position.set(5,-1.9,1);scene.add(impact);
+const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push((Math.random()-.5)*34,(Math.random()-.5)*15,(Math.random()-.5)*15);particles.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));scene.add(new THREE.Points(particles,new THREE.PointsMaterial({color:0xf4552e,size:.05,transparent:true,opacity:.65})));
+const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1);scrollHint.style.opacity=progress>.22?'0':'1'}
+addEventListener('scroll',update,{passive:true});update();
+// Controles alternativos sem alterar a cena 3D validada: setas, Page Up/Down, Home e End.
+addEventListener('keydown',event=>{
+ if(event.altKey||event.ctrlKey||event.metaKey||event.shiftKey)return;
+ if(['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName))return;
+ const step=innerHeight*.68;
+ let target=null;
+ if(event.key==='ArrowDown'||event.key==='PageDown')target=scrollY+step;
+ else if(event.key==='ArrowUp'||event.key==='PageUp')target=scrollY-step;
+ else if(event.key==='Home')target=0;
+ else if(event.key==='End')target=stage.offsetHeight-innerHeight;
+ if(target===null)return;
+ event.preventDefault();
+ scrollTo({top:Math.max(0,Math.min(target,stage.offsetHeight-innerHeight)),behavior:reducedMotion?'instant':'smooth'});
+});
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer){dragonMixer.update(0);if(dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=true;dragonClip.time=displayProgress*duration;dragonMixer.setTime(dragonClip.time)}}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
+dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+(reducedMotion?0:Math.sin(displayProgress*23)*.08*flight),1);
+dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
+const flap=(reducedMotion?0:Math.sin(displayProgress*46))*(.07+flight*.43)*(1-settle);
+left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
+left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
+left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
+tail.rotation.z=reducedMotion?0:Math.sin(displayProgress*19)*.16*flight;tail.rotation.y=reducedMotion?0:Math.sin(displayProgress*14)*.12*flight;emblem.rotation.y=reducedMotion?0:Math.sin(displayProgress*3)*.035;
+const mobile=innerWidth<700;camera.position.x=cruise*5.0;camera.position.y=5+lift*.45-settle*.3;camera.position.z=mobile?25:19;camera.lookAt(cruise*4.0,settle*.1,0);const burst=ease((displayProgress-.77)/.035)*(1-ease((displayProgress-.85)/.11));
+impact.material.opacity=burst*.7;
+const impactArray=impactGeometry.attributes.position.array;
+for(let i=0;i<impactVectors.length/3;i++){const p=i*3;impactArray[p]=impactVectors[p]*burst;impactArray[p+1]=impactVectors[p+1]*burst-.55*burst*burst;impactArray[p+2]=impactVectors[p+2]*burst}
+impactGeometry.attributes.position.needsUpdate=true;
+const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=55+10*Math.sin(displayProgress*6);for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(displayProgress*3+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
+animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75))});
+}catch(e){document.getElementById('error').style.display='grid';console.error(e)}
+</script></body></html>
