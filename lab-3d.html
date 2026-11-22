@@ -100,23 +100,23 @@ impactGeometry.setAttribute('position',new THREE.Float32BufferAttribute(impactPo
 const impact=new THREE.Points(impactGeometry,new THREE.PointsMaterial({color:0xe0a45e,size:.07,transparent:true,opacity:0,depthWrite:false}));
 impact.position.set(5,-1.9,1);scene.add(impact);
 const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push((Math.random()-.5)*34,(Math.random()-.5)*15,(Math.random()-.5)*15);particles.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));scene.add(new THREE.Points(particles,new THREE.PointsMaterial({color:0xf4552e,size:.05,transparent:true,opacity:.65})));
-const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0,manual=true;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+const stage=document.getElementById('stage'),clock=new THREE.Clock(),reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;let progress=0,displayProgress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
 function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1);scrollHint.style.opacity=progress>.22?'0':'1'}
 addEventListener('scroll',update,{passive:true});update();
-function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer)dragonMixer.update(reducedMotion?0:dt);const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
-dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+Math.sin(t*1.7)*.08*lift*(1-settle),1);
-dragon.rotation.set(-.03*lift,.03+cruise*.16+Math.sin(t*.5)*.035*flight,(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
-const flap=(reducedMotion?0:Math.sin(t*(2.5+lift*3.2)))*(.13+lift*.37)*(1-settle);
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer){dragonMixer.update(0);if(dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=true;dragonClip.time=displayProgress*duration;dragonMixer.setTime(dragonClip.time)}}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle);
+dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+(reducedMotion?0:Math.sin(displayProgress*23)*.08*flight),1);
+dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
+const flap=(reducedMotion?0:Math.sin(displayProgress*46))*(.07+flight*.43)*(1-settle);
 left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
 left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
 left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
-tail.rotation.z=reducedMotion?0:Math.sin(t*2)*.16;tail.rotation.y=reducedMotion?0:Math.sin(t*1.5)*.12;emblem.rotation.y=reducedMotion?0:Math.sin(t*.25)*.035;
+tail.rotation.z=reducedMotion?0:Math.sin(displayProgress*19)*.16*flight;tail.rotation.y=reducedMotion?0:Math.sin(displayProgress*14)*.12*flight;emblem.rotation.y=reducedMotion?0:Math.sin(displayProgress*3)*.035;
 const mobile=innerWidth<700;camera.position.x=cruise*5.0;camera.position.y=5+lift*.45-settle*.3;camera.position.z=mobile?25:19;camera.lookAt(cruise*4.0,settle*.1,0);const burst=ease((displayProgress-.77)/.035)*(1-ease((displayProgress-.85)/.11));
 impact.material.opacity=burst*.7;
 const impactArray=impactGeometry.attributes.position.array;
 for(let i=0;i<impactVectors.length/3;i++){const p=i*3;impactArray[p]=impactVectors[p]*burst;impactArray[p+1]=impactVectors[p+1]*burst-.55*burst*burst;impactArray[p+2]=impactVectors[p+2]*burst}
 impactGeometry.attributes.position.needsUpdate=true;
-const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(t*.8);for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(t*.11+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
+const reveal=ease((displayProgress-.9)/.09);actions.style.opacity=reveal;actions.style.pointerEvents=reveal>.95?'auto':'none';actions.setAttribute('aria-hidden',reveal>.95?'false':'true');red.intensity=80+25*Math.sin(displayProgress*6);for(let i=0;i<haze.length;i++)haze[i].position.x=Math.sin(displayProgress*3+i)*.7+(i%3-1)*4;renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.fov=innerWidth<700?48:38;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.75))});
 }catch(e){document.getElementById('error').style.display='grid';console.error(e)}
 </script></body></html>
