@@ -24,9 +24,20 @@ for(const side of [-1,1]){segment(dragon,gold,[1.63,.88,side*.22],[1.47,1.25,sid
 for(let i=0;i<5;i++){const x=1.1+i*.19;spike(dragon,x,.77-i*.05,0,.17+i*.02,emberGold)}
 for(const side of [-1,1])for(const x of [-.88,.86]){for(let claw=0;claw<3;claw++)segment(dragon,emberGold,[x,-1.22,side*.43+(claw-1)*.11],[x+.13,-1.47,side*.43+(claw-1)*.13],.055,.004)}
 const tail=new THREE.Group();tail.position.set(-1.25,-.08,0);dragon.add(tail);for(let i=0;i<7;i++){const seg=ball(tail,i%2?dark:scale,-i*.38,-i*i*.014,0,.43-i*.035,.22-i*.017,.2-i*.016);seg.rotation.z=i*.11}spike(tail,-2.6,-.85,0,.5);
-function wing(side){const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(hinge);const vertices=new Float32Array([0,0,0,-.4,2.6,side*.6,-1.5,1.8,side*1.9,-2.7,.55,side*2.3,-2.15,.75,side*.95,-1.3,.3,side*.3]);const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(vertices,3));geom.setIndex([0,1,5,1,2,5,2,4,5,2,3,4]);geom.computeVertexNormals();hinge.add(new THREE.Mesh(geom,membrane));for(const [a,b] of [[0,1],[1,2],[2,3]]){const v1=new THREE.Vector3(...vertices.slice(a*3,a*3+3)),v2=new THREE.Vector3(...vertices.slice(b*3,b*3+3));const d=v2.clone().sub(v1),rod=new THREE.Mesh(new THREE.CylinderGeometry(.06,.11,d.length(),6),gold);rod.position.copy(v1.add(v2).multiplyScalar(.5));rod.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());hinge.add(rod)}return hinge}
+function wing(side){
+const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(hinge);
+const shape=[[0,0,0],[-.38,2.75,side*.65],[-1.15,2.38,side*1.5],[-1.62,1.45,side*2.12],[-2.3,1.72,side*2.2],[-2.8,.65,side*2.55],[-2.12,.94,side*1.24],[-1.52,.32,side*.37]];
+const vertices=new Float32Array(shape.flat()),geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(vertices,3));
+geom.setIndex([0,1,7,1,2,7,2,3,7,3,6,7,3,4,6,4,5,6]);geom.computeVertexNormals();
+hinge.add(new THREE.Mesh(geom,membrane));
+for(const [i,j] of [[0,1],[1,2],[2,3],[3,4],[4,5],[0,7],[7,6]]){
+const A=new THREE.Vector3(...shape[i]),B=new THREE.Vector3(...shape[j]),d=B.clone().sub(A);
+const bone=new THREE.Mesh(new THREE.CylinderGeometry(.055,.105,d.length(),7),i===0?gold:armor);
+bone.position.copy(A.add(B).multiplyScalar(.5));bone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());hinge.add(bone)}
+for(const i of [2,4,5]){const p=shape[i],tip=new THREE.Mesh(new THREE.ConeGeometry(.09,.32,5),gold);tip.position.set(p[0]-.08,p[1]+.14,p[2]);tip.rotation.z=-.45;hinge.add(tip)}
+return hinge}
 const left=wing(-1),right=wing(1);
-for(const w of [left,right]){for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.ConeGeometry(.095,.28,5),emberGold);m.position.set(-.25-i*.57,1.4-i*.2,(w===left?-1:1)*(.65+i*.43));m.rotation.z=-.6;w.add(m)}}
+
 function mountain(x,sz){const g=new THREE.ConeGeometry(sz,sz*2.2,7,5);const m=new THREE.Mesh(g,dark);m.position.set(x,-3.5,0);m.rotation.y=.4;scene.add(m);return m}mountain(-3,3.5);mountain(5,3.6);
 const emblem=new THREE.Group();scene.add(emblem);emblem.position.set(5,-.4,-1);const bar=(x,y,z,w,h,rot)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.42),gold);m.position.set(x,y,z);m.rotation.z=rot;emblem.add(m)};bar(-.8,0,0,.42,3.5,-.46);bar(.8,0,0,.42,3.5,.46);bar(0,-.35,.1,1.65,.35,0);const jewel=new THREE.Mesh(new THREE.OctahedronGeometry(.27),new THREE.MeshStandardMaterial({color:0xc51323,emissive:0x65000b,emissiveIntensity:.7,metalness:.35,roughness:.18}));jewel.position.set(0,.45,.35);emblem.add(jewel);
 const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push((Math.random()-.5)*34,(Math.random()-.5)*15,(Math.random()-.5)*15);particles.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));scene.add(new THREE.Points(particles,new THREE.PointsMaterial({color:0xf4552e,size:.05,transparent:true,opacity:.65})));
@@ -34,10 +45,15 @@ const stage=document.getElementById('stage'),clock=new THREE.Clock();let progres
 function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1)}
 addEventListener('scroll',update,{passive:true});update();
 function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime(),launch=ease((progress-.12)/.23),fly=ease((progress-.35)/.42),land=ease((progress-.79)/.16);
-dragon.position.set(-3+fly*8,1.15+launch*3.6-land*3.1,1+Math.sin(t*2)*.06*(1-land));dragon.rotation.set(0,-.12+fly*.3,launch*.12-land*.12);dragon.scale.setScalar(1-land*.18);
-const flap=Math.sin(t*(3+launch*4))*(.18+launch*.52)*(1-land);left.rotation.x=.18+flap;right.rotation.x=-.18-flap;left.rotation.y=launch*.12;right.rotation.y=-launch*.12;
+const lift=ease((progress-.10)/.24),cruise=ease((progress-.30)/.48),settle=ease((progress-.78)/.18);
+dragon.position.set(-3+cruise*8,1.15+lift*3.4-settle*3.1+Math.sin(t*1.7)*.08*lift*(1-settle),1);
+dragon.rotation.set(-.03*lift,.03+cruise*.16,(-.06*lift+.09*cruise)*(1-settle));dragon.scale.setScalar(1-settle*.18);
+const flap=Math.sin(t*(2.5+lift*3.2))*(.13+lift*.37)*(1-settle);
+left.rotation.x=.22+flap;right.rotation.x=-.22-flap;
+left.rotation.z=-.07+lift*.14-settle*.2;right.rotation.z=-.07+lift*.14-settle*.2;
+left.rotation.y=lift*.08;right.rotation.y=-lift*.08;
 tail.rotation.z=Math.sin(t*2)*.16;tail.rotation.y=Math.sin(t*1.5)*.12;emblem.rotation.y=Math.sin(t*.25)*.035;
-camera.position.x=fly*2;camera.position.y=5+launch*.6;camera.lookAt(1,0,0);renderer.render(scene,camera)}
+camera.position.x=cruise*2.1;camera.position.y=5+lift*.45-settle*.3;camera.lookAt(1,settle*.1,0);renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
 }catch(e){document.getElementById('error').style.display='grid';console.error(e)}
 </script></body></html>
