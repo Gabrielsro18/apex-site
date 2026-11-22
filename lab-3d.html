@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>APEX | Laboratório 3D</title>
+<style>*{box-sizing:border-box}html,body{margin:0;background:#08070a;color:#e9bc67;font-family:Georgia,serif}main{height:500vh}#view{position:sticky;top:0;height:100svh;overflow:hidden;background:radial-gradient(ellipse at 50% 70%,#2a1015,#08070a 72%)}canvas{display:block;width:100%;height:100%}header{position:absolute;top:0;left:0;right:0;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:22px 5vw;pointer-events:none}header b{font-size:clamp(22px,3vw,38px);letter-spacing:.2em}header span{font:10px system-ui;letter-spacing:.15em}#note{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font:11px system-ui;color:#c9b8a0;opacity:.75;white-space:nowrap}#error{position:absolute;inset:0;display:none;place-items:center;text-align:center;padding:25px;color:#eee}#view:has(#error[style*="grid"]) canvas{display:none}@media(max-width:600px){header span{font-size:8px;letter-spacing:.05em}}</style></head><body><main id="stage"><div id="view"><header><b>APEX</b><span>UMA GUILD, UM LEGADO</span></header><div id="error">Não foi possível carregar o motor 3D. Verifique sua conexão e o suporte a WebGL.</div><div id="note">LABORATÓRIO 3D · MODELO EXPERIMENTAL</div></div></main>
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
+try{
+const view=document.getElementById('view'),scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x0a080b,.022);
+const camera=new THREE.PerspectiveCamera(38,innerWidth/innerHeight,.1,300);camera.position.set(0,5,19);
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.3;view.prepend(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xaaa5c9,0x240707,2.0));const sun=new THREE.DirectionalLight(0xffbd75,3.2);sun.position.set(-4,9,6);scene.add(sun);const red=new THREE.PointLight(0xff2915,100,30);red.position.set(2,-1,1);scene.add(red);
+const dark=new THREE.MeshStandardMaterial({color:0x270b11,roughness:.7,metalness:.2}),scale=new THREE.MeshStandardMaterial({color:0x8f1620,roughness:.47,metalness:.32}),gold=new THREE.MeshStandardMaterial({color:0xd8a34b,roughness:.27,metalness:.8}),membrane=new THREE.MeshStandardMaterial({color:0x7d1420,side:THREE.DoubleSide,roughness:.72,metalness:.12}),eye=new THREE.MeshBasicMaterial({color:0xffd04b});
+function ball(parent,mat,x,y,z,sx,sy,sz){const m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),mat);m.position.set(x,y,z);m.scale.set(sx,sy,sz);parent.add(m);return m}
+function spike(parent,x,y,z,len,mat=gold){const m=new THREE.Mesh(new THREE.ConeGeometry(.12,len,6),mat);m.position.set(x,y+len/2,z);parent.add(m);return m}
+const dragon=new THREE.Group();scene.add(dragon);ball(dragon,scale,0,0,0,1.45,.7,.64);ball(dragon,dark,0,-.3,0,1.05,.48,.59);ball(dragon,scale,1.15,.33,0,.72,.5,.48);ball(dragon,scale,1.75,.55,0,.5,.38,.36);ball(dragon,dark,2.12,.38,0,.48,.18,.31);
+for(const z of [-.24,.24]){ball(dragon,eye,1.95,.67,z,.085,.06,.045);spike(dragon,1.52,.9,z,.42)}
+for(const x of [-.85,.9])for(const z of [-.45,.45]){ball(dragon,dark,x,-.65,z,.27,.7,.24);spike(dragon,x,-1.35,z,.22,gold)}
+for(let i=0;i<9;i++)spike(dragon,-1.2+i*.32,.57-Math.abs(i-4)*.035,0,.28+i*.017);
+const tail=new THREE.Group();tail.position.set(-1.25,-.08,0);dragon.add(tail);for(let i=0;i<7;i++){const seg=ball(tail,i%2?dark:scale,-i*.38,-i*i*.014,0,.43-i*.035,.22-i*.017,.2-i*.016);seg.rotation.z=i*.11}spike(tail,-2.6,-.85,0,.5);
+function wing(side){const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(hinge);const vertices=new Float32Array([0,0,0,-.4,2.6,side*.6,-1.5,1.8,side*1.9,-2.7,.55,side*2.3,-2.15,.75,side*.95,-1.3,.3,side*.3]);const geom=new THREE.BufferGeometry();geom.setAttribute('position',new THREE.BufferAttribute(vertices,3));geom.setIndex([0,1,5,1,2,5,2,4,5,2,3,4]);geom.computeVertexNormals();hinge.add(new THREE.Mesh(geom,membrane));for(const [a,b] of [[0,1],[1,2],[2,3]]){const v1=new THREE.Vector3(...vertices.slice(a*3,a*3+3)),v2=new THREE.Vector3(...vertices.slice(b*3,b*3+3));const d=v2.clone().sub(v1),rod=new THREE.Mesh(new THREE.CylinderGeometry(.06,.11,d.length(),6),gold);rod.position.copy(v1.add(v2).multiplyScalar(.5));rod.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());hinge.add(rod)}return hinge}
+const left=wing(-1),right=wing(1);
+function mountain(x,sz){const g=new THREE.ConeGeometry(sz,sz*2.2,7,5);const m=new THREE.Mesh(g,dark);m.position.set(x,-3.5,0);m.rotation.y=.4;scene.add(m);return m}mountain(-3,3.5);mountain(5,3.6);
+const emblem=new THREE.Group();scene.add(emblem);emblem.position.set(5,-.4,-1);const bar=(x,y,z,w,h,rot)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,.42),gold);m.position.set(x,y,z);m.rotation.z=rot;emblem.add(m)};bar(-.8,0,0,.42,3.5,-.46);bar(.8,0,0,.42,3.5,.46);bar(0,-.35,.1,1.65,.35,0);
+const particles=new THREE.BufferGeometry(),pts=[];for(let i=0;i<200;i++)pts.push((Math.random()-.5)*34,(Math.random()-.5)*15,(Math.random()-.5)*15);particles.setAttribute('position',new THREE.Float32BufferAttribute(pts,3));scene.add(new THREE.Points(particles,new THREE.PointsMaterial({color:0xf4552e,size:.05,transparent:true,opacity:.65})));
+const stage=document.getElementById('stage'),clock=new THREE.Clock();let progress=0;const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),ease=v=>{v=clamp(v,0,1);return v*v*(3-2*v)};
+function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeight),0,1)}
+addEventListener('scroll',update,{passive:true});update();
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime(),launch=ease((progress-.12)/.23),fly=ease((progress-.35)/.42),land=ease((progress-.79)/.16);
+dragon.position.set(-3+fly*8,1.15+launch*3.6-land*3.1,1+Math.sin(t*2)*.06*(1-land));dragon.rotation.set(0,-.12+fly*.3,launch*.12-land*.12);dragon.scale.setScalar(1-land*.18);
+const flap=Math.sin(t*(3+launch*4))*(.18+launch*.52)*(1-land);left.rotation.x=.18+flap;right.rotation.x=-.18-flap;left.rotation.y=launch*.12;right.rotation.y=-launch*.12;
+tail.rotation.z=Math.sin(t*2)*.1;emblem.rotation.y=Math.sin(t*.25)*.035;
+camera.position.x=fly*2;camera.position.y=5+launch*.6;camera.lookAt(1,0,0);renderer.render(scene,camera)}
+animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+}catch(e){document.getElementById('error').style.display='grid';console.error(e)}
+</script></body></html>
