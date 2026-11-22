@@ -34,6 +34,13 @@ for(let row=0;row<5;row++){const x=-1.05+row*.48;const radius=Math.sqrt(Math.max
 for(const side of [-1,1]){segment(dragon,gold,[1.63,.88,side*.22],[1.47,1.25,side*.34],.14,.09);segment(dragon,gold,[1.47,1.25,side*.34],[1.18,1.44,side*.44],.09,.012);segment(dragon,armor,[2.05,.39,side*.21],[2.44,.31,side*.27],.12,.02)}
 for(let i=0;i<5;i++){const x=1.1+i*.19;spike(dragon,x,.77-i*.05,0,.17+i*.02,emberGold)}
 for(const side of [-1,1])for(const x of [-.88,.86]){for(let claw=0;claw<3;claw++)segment(dragon,emberGold,[x,-1.22,side*.43+(claw-1)*.11],[x+.13,-1.47,side*.43+(claw-1)*.13],.055,.004)}
+// Mandíbula articulada e brilho da garganta: ativados apenas na aproximação final.
+const jaw=new THREE.Group();jaw.position.set(1.72,.34,0);dragon.add(jaw);
+ball(jaw,dark,.35,-.10,0,.56,.13,.30);
+for(const side of [-1,1])for(let i=0;i<3;i++){const fang=new THREE.Mesh(new THREE.ConeGeometry(.042,.16,5),gold);fang.position.set(.12+i*.18,-.15,side*.20);fang.rotation.z=Math.PI; jaw.add(fang)}
+const throatMat=new THREE.MeshBasicMaterial({color:0xff4b1b,transparent:true,opacity:0,depthWrite:false});
+const throat=ball(dragon,throatMat,2.06,.26,0,.34,.09,.21);
+const mouthLight=new THREE.PointLight(0xff5822,0,4);mouthLight.position.set(2.25,.28,0);dragon.add(mouthLight);
 const tail=new THREE.Group();tail.position.set(-1.25,-.08,0);dragon.add(tail);for(let i=0;i<7;i++){const seg=ball(tail,i%2?dark:scale,-i*.38,-i*i*.014,0,.43-i*.035,.22-i*.017,.2-i*.016);seg.rotation.z=i*.11}spike(tail,-2.6,-.85,0,.5);
 function wing(side){
 const hinge=new THREE.Group();hinge.position.set(-.35,.45,side*.43);dragon.add(hinge);
@@ -133,6 +140,8 @@ function update(){progress=clamp(scrollY/Math.max(1,stage.offsetHeight-innerHeig
 addEventListener('scroll',update,{passive:true});update();
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;displayProgress+=(progress-displayProgress)*Math.min(1,dt*(reducedMotion?20:7));if(dragonMixer&&dragonClip){const duration=dragonClip.getClip().duration;if(duration>0){dragonClip.paused=false;dragonMixer.setTime(displayProgress*duration)}}const lift=ease((displayProgress-.10)/.24),cruise=ease((displayProgress-.30)/.48),settle=ease((displayProgress-.78)/.18),flight=lift*(1-settle),bank=ease((displayProgress-.43)/.14)*(1-ease((displayProgress-.66)/.12));
 startShadow.material.opacity=.6*(1-lift);endShadow.material.opacity=.6*settle;
+const roar=ease((displayProgress-.78)/.055)*(1-ease((displayProgress-.91)/.065));
+jaw.rotation.z=-.36*roar;throatMat.opacity=.85*roar;mouthLight.intensity=roar*4;
 dragon.position.set(-3+cruise*8,-.25+lift*4.8-settle*3.1+(reducedMotion?0:Math.sin(displayProgress*23)*.08*flight),1);
 dragon.rotation.set(-.03*lift,.03+cruise*.16+(reducedMotion?0:Math.sin(displayProgress*7)*.035*flight),(-.06*lift+.09*cruise+.13*bank)*(1-settle));dragon.scale.setScalar(1-settle*.18);
 const flap=(reducedMotion?0:Math.sin(displayProgress*46))*(.07+flight*.43)*(1-settle);
